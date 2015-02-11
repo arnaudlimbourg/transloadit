@@ -10,6 +10,7 @@ BASE_API = "https://api2.transloadit.com"
 
 
 class TransloaditClient(object):
+    params = {}
 
     def __init__(self, key, secret, api=None):
         self.auth_key = key
@@ -24,13 +25,15 @@ class TransloaditClient(object):
 
     def _send_post_request(self, endpoint, template_id=None, files=None,
                            assembly_steps=None):
-        params = {
+        params = self.params
+
+        params.update({
             'auth': {
                 'key': self.auth_key,
                 'expires': (datetime.now() +
                             timedelta(minutes=30)).strftime('%Y/%m/%d %H:%M:%S')
             }
-        }
+        })
 
         if template_id is not None and assembly_steps is not None:
             raise ValueError("template_id and assembly_steps are mutually exclusive")
@@ -53,7 +56,7 @@ class TransloaditClient(object):
         response = requests.post(endpoint, data=payload, files=files)
         return response
 
-    def upload(self, file_descriptor, assembly_steps=None, template_id=None):
+    def upload(self, file_descriptor, assembly_steps=None, template_id=None, params=None):
         """Upload a file to transloadit
 
         You must give it an file descriptor like open("file", "rb")
@@ -81,6 +84,9 @@ class TransloaditClient(object):
         """
 
         endpoint = '{0}/{1}'.format(self.api, 'assemblies')
+
+        if params is not None:
+            self.params.update(params)
 
         files = {'file': file_descriptor}
         response = self._send_post_request(endpoint, files=files,
